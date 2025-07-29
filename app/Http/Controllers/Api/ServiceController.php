@@ -2,16 +2,23 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Resources\ServiceResource;
-use App\Models\Service;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ServiceResource;
+use App\Services\ServiceService;
+use Illuminate\Http\Request;
 
 class ServiceController extends Controller
 {
+    protected $serviceService;
+
+    public function __construct(ServiceService $serviceService)
+    {
+        $this->serviceService = $serviceService;
+    }
+
     public function index()
     {
-        $services = Service::where('status', true)->get();
+        $services = $this->serviceService->getAllActiveServices();
         return response()->json(ServiceResource::collection($services));
     }
 
@@ -21,14 +28,7 @@ class ServiceController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric',
-            'status' => 'required|boolean',
-        ]);
-
-        $service = Service::create($validated);
+        $service = $this->serviceService->createService($request->all());
         return response()->json(new ServiceResource($service), 201);
     }
 
@@ -38,16 +38,7 @@ class ServiceController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $service = Service::findOrFail($id);
-
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string',
-            'description' => 'nullable|string',
-            'price' => 'sometimes|required|numeric',
-            'status' => 'sometimes|required|boolean',
-        ]);
-
-        $service->update($validated);
+        $service = $this->serviceService->updateService($id, $request->all());
         return response()->json(new ServiceResource($service));
     }
 
@@ -57,9 +48,7 @@ class ServiceController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $service = Service::findOrFail($id);
-        $service->delete();
-
+        $this->serviceService->deleteService($id);
         return response()->json(['message' => 'Service deleted']);
     }
 }
