@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Resources\BookingResource;
-use App\Models\Booking;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\BookingResource;
+use App\Services\BookingService;
+use Illuminate\Http\Request;
 
 class BookingController extends Controller
 {
+    protected $bookingService;
+
+    public function __construct(BookingService $bookingService)
+    {
+        $this->bookingService = $bookingService;
+    }
+
     public function store(Request $request)
     {
         if (!auth()->check()) {
@@ -21,14 +27,9 @@ class BookingController extends Controller
             'booking_date' => 'required|date|after_or_equal:today',
         ]);
 
-        $booking = Booking::create([
-            'user_id' => auth()->id(),
-            'service_id' => $validated['service_id'],
-            'booking_date' => $validated['booking_date'],
-            'status' => 'pending',
-        ]);
+        $booking = $this->bookingService->createBooking($validated);
 
-        return response()->json($booking, 201);
+        return response()->json(new BookingResource($booking), 201);
     }
 
     public function userBookings()
@@ -37,9 +38,7 @@ class BookingController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $bookings = Booking::with('service')
-            ->where('user_id', auth()->id())
-            ->get();
+        $bookings = $this->bookingService->getUserBookings();
 
         return response()->json(BookingResource::collection($bookings));
     }
@@ -50,7 +49,8 @@ class BookingController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        $bookings = Booking::with(['user', 'service'])->get();
+        $bookings = $this->bookingService->getAllBookings();
+
         return response()->json(BookingResource::collection($bookings));
     }
 }
