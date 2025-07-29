@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\BookingResource;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -40,7 +41,7 @@ class BookingController extends Controller
             ->where('user_id', auth()->id())
             ->get();
 
-        return response()->json($bookings);
+        return response()->json(BookingResource::collection($bookings));
     }
 
     public function allBookings()
@@ -50,6 +51,6 @@ class BookingController extends Controller
         }
 
         $bookings = Booking::with(['user', 'service'])->get();
-        return response()->json($bookings);
+        return response()->json(BookingResource::collection($bookings));
     }
 }
