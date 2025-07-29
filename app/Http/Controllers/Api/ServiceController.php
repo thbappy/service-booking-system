@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Resources\ServiceResource;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -11,7 +12,7 @@ class ServiceController extends Controller
     public function index()
     {
         $services = Service::where('status', true)->get();
-        return response()->json($services);
+        return response()->json(ServiceResource::collection($services));
     }
 
     public function store(Request $request)
@@ -28,7 +29,7 @@ class ServiceController extends Controller
         ]);
 
         $service = Service::create($validated);
-        return response()->json($service, 201);
+        return response()->json(new ServiceResource($service), 201);
     }
 
     public function update(Request $request, $id)
@@ -47,7 +48,7 @@ class ServiceController extends Controller
         ]);
 
         $service->update($validated);
-        return response()->json($service);
+        return response()->json(new ServiceResource($service));
     }
 
     public function destroy($id)
